@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model BagType {
+  bagTypeId   Int       @id
+  bagTypeName String    @db.VarChar(30)
+  Product     Product[]
+}
+
+model Color {
+  colorId       Int             @id
+  colorName     String          @db.VarChar(30)
+  OrderDetail   OrderDetail[]
+  ProductDetail ProductDetail[]
+}
+
+model Customer {
+  username  String   @id @db.VarChar(30)
+  password  String   @db.Char(100)
+  firstName String   @db.VarChar(50)
+  lastName  String   @db.VarChar(30)
+  Orders    Orders[]
+}
+
+model OrderDetail {
+  orderDetailId Int     @id @default(autoincrement())
+  productId     Int
+  colorId       Int
+  orderId       Int
+  Color         Color   @relation(fields: [colorId], references: [colorId], onUpdate: Restrict, map: "OrderDetail_Color_FK")
+  Orders        Orders  @relation(fields: [orderId], references: [orderId], onUpdate: Restrict, map: "OrderDetail_Order_FK")
+  Product       Product @relation(fields: [productId], references: [productId], onUpdate: Restrict, map: "OrderDetail_Product_FK")
+
+  @@index([colorId], map: "OrderDetail_Color_FK")
+  @@index([orderId], map: "OrderDetail_Order_FK")
+  @@index([productId], map: "OrderDetail_Product_FK")
+}
+
+model Orders {
+  orderId      Int           @id @default(autoincrement())
+  quantity     Int
+  total        Decimal       @db.Decimal(5, 2)
+  deliveryDate DateTime      @db.Date
+  address      String        @db.VarChar(400)
+  username     String        @db.VarChar(30)
+  Customer     Customer      @relation(fields: [username], references: [username], onUpdate: Restrict, map: "Order_Customer_FK")
+  OrderDetail  OrderDetail[]
+
+  @@index([username], map: "Order_Customer_FK")
+}
+
+model Product {
+  productId     Int             @id @default(autoincrement())
+  productName   String          @unique(map: "Product__UN") @db.VarChar(30)
+  productDes    String          @db.VarChar(700)
+  price         Decimal         @db.Decimal(5, 2)
+  imageName     String          @db.VarChar(50)
+  bagTypeId     Int
+  BagType       BagType         @relation(fields: [bagTypeId], references: [bagTypeId], onUpdate: Restrict, map: "Product_BagType_FK")
+  OrderDetail   OrderDetail[]
+  ProductDetail ProductDetail[]
+
+  @@index([bagTypeId], map: "Product_BagType_FK")
+}
+
+model ProductDetail {
+  colorId   Int
+  productId Int
+  Color     Color   @relation(fields: [colorId], references: [colorId], onUpdate: Restrict, map: "FK_ASS_1")
+  Product   Product @relation(fields: [productId], references: [productId], onUpdate: Restrict, map: "FK_ASS_8")
+
+  @@id([colorId, productId])
+  @@index([productId], map: "FK_ASS_8")
+}
+
+model Worker {
+  username  String   @id @db.VarChar(30)
+  password  String   @db.Char(100)
+  firstName String   @db.VarChar(30)
+  lastName  String   @db.VarChar(30)
+  DOB       DateTime @db.Date
+  position  String   @db.VarChar(30)
+}
