@@ -1,5 +1,6 @@
 const router = require('express').Router();
-const { PrismaClient } = require('@prisma/client')
+const { PrismaClient } = require('@prisma/client');
+const { formatDate } = require('../services/formatDate');
 const { worker } = new PrismaClient();
 
 router.get('/getStaffList', async(req, res) => {
@@ -17,6 +18,9 @@ router.get('/getStaffList', async(req, res) => {
                 position: 'Staff'
             }
         })
+        for (let i in staffList) {
+            staffList[i].DOB = formatDate(staffList[i].DOB)
+        }
         res.send(staffList)
     }
 })
