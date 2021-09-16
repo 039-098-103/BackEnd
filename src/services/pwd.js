@@ -10,6 +10,13 @@ async function comparePwd(inp, hashedPwd) {
     }
 }
 
+async function encryptPwd(rawPwd) {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPwd = await bcrypt.hash(rawPwd, salt)
+    return hashedPwd
+}
+
 module.exports = {
     comparePwd,
+    encryptPwd
 }

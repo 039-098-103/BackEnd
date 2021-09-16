@@ -1,7 +1,14 @@
 const router = require('express').Router();
 const { PrismaClient } = require('@prisma/client');
-const { formatDate } = require('../services/formatDate');
+
 const { worker } = new PrismaClient();
+
+const { formatDate } = require('../services/formatDate');
+
+const { upload } = require('../middleware/upload')
+const fs = require('fs')
+
+const { encryptPwd } = require('../services/pwd')
 
 router.get('/getStaffList', async(req, res) => {
     if (req.payload.role != 'Admin') {
@@ -22,6 +29,27 @@ router.get('/getStaffList', async(req, res) => {
             staffList[i].DOB = formatDate(staffList[i].DOB)
         }
         res.send(staffList)
+    }
+})
+
+router.post('/addStaff', upload.single('data'), async(req, res) => {
+    if (req.payload.role != 'Admin') {
+        res.status(401).json("You don't have Permission!")
+    } else {
+        const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'));
+        await worker.create({
+            data: {
+                username: data.username,
+                password: await encryptPwd(data.password),
+                firstName: data.firstName,
+                lastName: data.lastName,
+                DOB: data.DOB,
+                position: data.position
+            }
+        })
+
+        res.send(`Staff ${data.username} has been created!`)
+        fs.unlinkSync('./tmp/data.json')
     }
 })
 
