@@ -53,4 +53,43 @@ router.post('/addStaff', upload.single('data'), async(req, res) => {
     }
 })
 
+router.delete('/delete/:username', async(req, res) => {
+    if (req.payload.role != 'Admin') {
+        res.status(401).json("You don't have Permission!");
+    } else {
+        const { username } = req.params
+        await worker.delete({
+            where: {
+                username: username
+            }
+        })
+        res.status(200).send(`Staff ${username} has been deleted!`)
+    }
+
+
+})
+
+router.patch('/update', upload.single('data'), async(req, res) => {
+    if (req.payload.role != 'Admin') {
+        res.status(401).json("You don't have Permission!")
+    } else {
+        const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
+
+        await worker.updateMany({
+            data: {
+                username: data.username,
+                password: await encryptPwd(data.password),
+                firstName: data.firstName,
+                lastName: data.lastName,
+                DOB: data.DOB
+            },
+            where: {
+                position: 'Admin'
+            }
+        })
+        res.status(200).send(`Admin information has been updated!`)
+        fs.unlinkSync('./tmp/data.json')
+    }
+})
+
 module.exports = router;
