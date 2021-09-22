@@ -53,7 +53,7 @@ router.post('/addStaff', upload.single('data'), async(req, res) => {
                         password: await encryptPwd(data.password),
                         firstName: data.firstName,
                         lastName: data.lastName,
-                        DOB: data.DOB,
+                        DOB: new Date(data.DOB),
                         position: data.position
                     }
                 })
@@ -111,7 +111,7 @@ router.patch('/update', upload.single('data'), async(req, res) => {
                     password: await encryptPwd(data.password),
                     firstName: data.firstName,
                     lastName: data.lastName,
-                    DOB: data.DOB
+                    DOB: new Date(data.DOB)
                 },
                 where: {
                     position: 'Admin'
