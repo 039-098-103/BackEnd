@@ -10,7 +10,7 @@ router.post('/', async(req, res) => {
     if (!username || !password) {
         res.status(400).send("Username or Password is empty!")
     } else {
-
+        const username_lc = username.toLowerCase()
         try {
             const result = await worker.findMany({
                 select: {
@@ -19,7 +19,7 @@ router.post('/', async(req, res) => {
                     position: true
                 },
                 where: {
-                    username: username
+                    username: username_lc
                 }
             })
 
@@ -31,7 +31,7 @@ router.post('/', async(req, res) => {
                     res.status(403).send("Wrong Password!")
                 }
                 if (resCode == 200) {
-                    const token = await signAccessToken(username, pos)
+                    const token = await signAccessToken(username_lc, pos)
                     res.status(200).send(token)
                 } else {
                     res.status(401).send("You don't have permission!")

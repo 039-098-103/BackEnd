@@ -42,6 +42,8 @@ router.post('/addStaff', upload.single('data'), async(req, res) => {
     } else {
         try {
             const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'));
+            //username to lowercase
+            data.username = data.username.toLowerCase();
             //check if username duplicate
             const isDuplicate = await findUser(data.username)
             if (isDuplicate) {
@@ -73,21 +75,22 @@ router.delete('/delete/:username', async(req, res) => {
         res.status(401).send("You don't have Permission!");
     } else {
         const { username } = req.params
+        const username_lc = username.toLowerCase();
         if (!username) {
             res.send(400).send("Username is empty.")
         } else {
             try {
                 //check if username exists
-                const isExists = await findUser(username);
+                const isExists = await findUser(username_lc);
                 if (!isExists) {
                     res.status(400).send("Username not found!")
                 } else {
                     await worker.delete({
                         where: {
-                            username: username
+                            username: username_lc
                         }
                     })
-                    res.status(200).send(`Staff ${username} has been deleted!`)
+                    res.status(200).send(`Staff ${username_lc} has been deleted!`)
                 }
             } catch (err) {
                 res.send(503).send("Could not delete the Staff!")
@@ -104,7 +107,8 @@ router.patch('/update', upload.single('data'), async(req, res) => {
     } else {
         try {
             const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
-
+                //username to lowercase
+            data.username = data.username.toLowerCase();
             await worker.updateMany({
                 data: {
                     username: data.username,
