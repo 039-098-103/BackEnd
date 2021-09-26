@@ -57,14 +57,14 @@ router.post('/addStaff', upload.single('data'), async(req, res) => {
                         firstName: data.firstName,
                         lastName: data.lastName,
                         DOB: new Date(data.DOB),
-                        position: data.position
+                        position: 'Staff'
                     }
                 })
-                res.send(`Staff ${data.username} has been created!`)
+                res.status(200).send(`Staff ${data.username} has been created!`)
             }
             fs.unlinkSync('./tmp/data.json')
         } catch (err) {
-            res.send(400).send("Could not add Staff!")
+            res.status(400).send("Could not add Staff!")
         }
 
     }
@@ -95,7 +95,7 @@ router.delete('/delete/:username', async(req, res) => {
                     res.status(200).send(`Staff ${username_lc} has been deleted!`)
                 }
             } catch (err) {
-                res.send(503).send("Could not delete the Staff!")
+                res.status(400).send("Could not delete the Staff!")
             }
 
         }
@@ -116,7 +116,7 @@ router.patch('/update', upload.single('data'), async(req, res) => {
                 await prisma.$executeRaw `UPDATE worker SET username=${data.username}, firstName=${data.firstName}, lastName=${data.lastName}, DOB=${data.DOB} WHERE position='Admin'`
                 res.status(200).send("Admin info has been updated!")
             } else {
-                await worker.update({
+                await worker.updateMany({
                     data: {
                         username: data.username,
                         password: await encryptPwd(data.password),
