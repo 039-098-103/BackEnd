@@ -36,11 +36,10 @@ router.post('/', async(req, res) => {
                 } else {
                     res.status(401).send("You don't have permission!")
                 }
-            } else {
-                res.status(404).send("User not found!")
             }
+
         } catch (err) {
-            res.status(400).send("Could not login!")
+            res.status(404).send("User not found!")
         }
     }
 })
