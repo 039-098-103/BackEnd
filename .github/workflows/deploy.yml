@@ -50,4 +50,4 @@ jobs:
             docker pull ghcr.io/039-098-103/backend
             docker images
             docker rm -f backend
-            docker run -p 3000:3000 -d --name backend --network bagshop --ip 172.18.0.5 ghcr.io/039-098-103/backend
+            docker run -d --name backend --network bagshop --ip 172.18.0.5 ghcr.io/039-098-103/backend
