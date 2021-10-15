@@ -17,6 +17,7 @@ app.use(express.json())
 app.use('/api/worker/auth', require('./services/workerAuth'))
 app.use('/api/admin', authToken, require('./routes/admin'))
 app.use('/api/getProduct', require('./routes/productDetail'))
+app.use('/api/auth', require('./services/auth'))
 
 //port
 app.listen(3000)
