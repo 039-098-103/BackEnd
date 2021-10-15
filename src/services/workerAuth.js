@@ -22,10 +22,12 @@ router.post('/', async(req, res) => {
                     username: username_lc
                 }
             })
+            if (result == '') {
+                res.status(404).send('Username does not exist!')
+            } else {
+                const pass = result[0].password
+                const pos = result[0].position
 
-            const pass = result[0].password
-            const pos = result[0].position
-            if (pass) {
                 const resCode = await comparePwd(password, pass)
                 if (resCode == 403) {
                     res.status(403).send("Wrong Password!")
@@ -36,10 +38,11 @@ router.post('/', async(req, res) => {
                 } else {
                     res.status(401).send("You don't have permission!")
                 }
+
             }
 
         } catch (err) {
-            res.status(404).send("User not found!")
+            res.status(500).send("Something Went Wrong!")
         }
     }
 })

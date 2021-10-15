@@ -32,7 +32,7 @@ router.get('/getStaffList', async(req, res) => {
             }
             res.send(staffList)
         } catch (err) {
-            res.status(400).send("Could not get StaffList!")
+            res.status(500).send("Could not get StaffList!")
         }
     }
 })
@@ -64,7 +64,7 @@ router.post('/addStaff', upload.single('data'), async(req, res) => {
             }
             fs.unlinkSync('./tmp/data.json')
         } catch (err) {
-            res.status(400).send("Could not add Staff!")
+            res.status(500).send("Could not add Staff!")
         }
 
     }
@@ -95,7 +95,7 @@ router.delete('/delete/:username', async(req, res) => {
                     res.status(200).send(`Staff ${username_lc} has been deleted!`)
                 }
             } catch (err) {
-                res.status(400).send("Could not delete the Staff!")
+                res.status(500).send("Could not delete the Staff!")
             }
 
         }
@@ -132,7 +132,7 @@ router.patch('/update', upload.single('data'), async(req, res) => {
             }
             fs.unlinkSync('./tmp/data.json')
         } catch (err) {
-            res.status(400).send('Could not update!')
+            res.status(500).send('Could not update!')
         }
 
     }
@@ -164,7 +164,7 @@ router.get('/getInfo', async(req, res) => {
             adminInfo[0].DOB = formatDate(adminInfo[0].DOB)
             res.status(200).send(adminInfo);
         } catch (err) {
-            res.status(400).send("Could not get info!")
+            res.status(500).send("Could not get info!")
         }
     }
 })

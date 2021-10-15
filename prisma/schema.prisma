@@ -16,30 +16,27 @@ model BagType {
 model Color {
   colorId       Int             @id
   colorName     String          @db.VarChar(30)
-  OrderDetail   OrderDetail[]
   ProductDetail ProductDetail[]
 }
 
 model Customer {
-  username  String   @id @db.VarChar(30)
-  password  String   @db.Char(100)
-  firstName String   @db.VarChar(50)
-  lastName  String   @db.VarChar(30)
+  username  String     @id @db.VarChar(30)
+  password  String     @db.Char(100)
+  firstName String     @db.VarChar(50)
+  lastName  String     @db.VarChar(30)
+  CartItem  CartItem[]
   Orders    Orders[]
 }
 
 model OrderDetail {
-  orderDetailId Int     @id @default(autoincrement())
-  productId     Int
-  colorId       Int
-  orderId       Int
-  Color         Color   @relation(fields: [colorId], references: [colorId], onUpdate: Restrict, map: "OrderDetail_Color_FK")
-  Orders        Orders  @relation(fields: [orderId], references: [orderId], onUpdate: Restrict, map: "OrderDetail_Order_FK")
-  Product       Product @relation(fields: [productId], references: [productId], onUpdate: Restrict, map: "OrderDetail_Product_FK")
+  orderDetailId   Int           @id @default(autoincrement())
+  productDetailId Int
+  orderId         Int
+  Orders          Orders        @relation(fields: [orderId], references: [orderId], onUpdate: Restrict, map: "OrderDetail_Order_FK")
+  ProductDetail   ProductDetail @relation(fields: [productDetailId], references: [productDetailId], onUpdate: Restrict, map: "OrderDetail_ProductDetail_FK")
 
-  @@index([colorId], map: "OrderDetail_Color_FK")
   @@index([orderId], map: "OrderDetail_Order_FK")
-  @@index([productId], map: "OrderDetail_Product_FK")
+  @@index([productDetailId], map: "OrderDetail_ProductDetail_FK")
 }
 
 model Orders {
@@ -63,20 +60,22 @@ model Product {
   imageName     String          @db.VarChar(50)
   bagTypeId     Int
   BagType       BagType         @relation(fields: [bagTypeId], references: [bagTypeId], onUpdate: Restrict, map: "Product_BagType_FK")
-  OrderDetail   OrderDetail[]
   ProductDetail ProductDetail[]
 
   @@index([bagTypeId], map: "Product_BagType_FK")
 }
 
 model ProductDetail {
-  colorId   Int
-  productId Int
-  Color     Color   @relation(fields: [colorId], references: [colorId], onUpdate: Restrict, map: "FK_ASS_1")
-  Product   Product @relation(fields: [productId], references: [productId], onUpdate: Restrict, map: "FK_ASS_8")
+  productDetailId Int           @id
+  productId       Int
+  colorId         Int
+  Color           Color         @relation(fields: [colorId], references: [colorId], onUpdate: Restrict, map: "ProductDetail_Color_FK")
+  Product         Product       @relation(fields: [productId], references: [productId], onUpdate: Restrict, map: "ProductDetail_Product_FK")
+  CartItem        CartItem[]
+  OrderDetail     OrderDetail[]
 
-  @@id([colorId, productId])
-  @@index([productId], map: "FK_ASS_8")
+  @@index([colorId], map: "ProductDetail_Color_FK")
+  @@index([productId], map: "ProductDetail_Product_FK")
 }
 
 model Worker {
@@ -86,4 +85,15 @@ model Worker {
   lastName  String   @db.VarChar(30)
   DOB       DateTime @db.Date
   position  String   @db.VarChar(30)
+}
+
+model CartItem {
+  cartItemId      Int           @id @default(autoincrement())
+  username        String        @db.VarChar(30)
+  productDetailId Int
+  ProductDetail   ProductDetail @relation(fields: [productDetailId], references: [productDetailId], onUpdate: Restrict, map: "CartItem_ProductDetail_FK")
+  Customer        Customer      @relation(fields: [username], references: [username], onUpdate: Restrict, map: "CartItem_Customer_FK")
+
+  @@index([username], map: "CartItem_Customer_FK")
+  @@index([productDetailId], map: "CartItem_ProductDetail_FK")
 }
