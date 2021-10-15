@@ -18,6 +18,7 @@ app.use('/api/worker/auth', require('./services/workerAuth'))
 app.use('/api/admin', authToken, require('./routes/admin'))
 app.use('/api/getProduct', require('./routes/productDetail'))
 app.use('/api/auth', require('./services/auth'))
+app.use('/api/customer', require('./routes/customer'))
 
 //port
 app.listen(3000)
