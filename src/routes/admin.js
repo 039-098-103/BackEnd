@@ -144,11 +144,7 @@ async function findUser(username) {
             username: username
         }
     })
-    if (res) {
-        return true
-    } else {
-        return false
-    }
+    return res === null ? false : true
 }
 
 router.get('/getInfo', async(req, res) => {
