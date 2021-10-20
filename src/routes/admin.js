@@ -37,7 +37,7 @@ router.get('/getStaffList', async(req, res) => {
     }
 })
 
-router.post('/addStaff', upload.single('data'), async(req, res) => {
+router.post('/addWorker', upload.single('data'), async(req, res) => {
     if (req.payload.role != 'Admin') {
         res.status(401).send("You don't have Permission!")
     } else {
@@ -57,14 +57,14 @@ router.post('/addStaff', upload.single('data'), async(req, res) => {
                         firstName: data.firstName,
                         lastName: data.lastName,
                         DOB: new Date(data.DOB),
-                        position: 'Staff'
+                        position: data.position
                     }
                 })
-                res.status(200).send(`Staff ${data.username} has been created!`)
+                res.status(200).send(`${data.position} ${data.username} has been created!`)
             }
             fs.unlinkSync('./tmp/data.json')
         } catch (err) {
-            res.status(500).send("Could not add Staff!")
+            res.status(500).send("Could not add user!")
         }
 
     }
@@ -84,9 +84,13 @@ router.delete('/delete/:username', async(req, res) => {
             try {
                 //check if username exists
                 const isExists = await findUser(username_lc);
+                const isAdmin = await isUserAdmin(username_lc);
+                if (isAdmin) {
+                    res.status(401).send("You don't have Permission!")
+                }
                 if (!isExists) {
                     res.status(400).send("Username not found!")
-                } else {
+                } else if (!isAdmin) {
                     await worker.delete({
                         where: {
                             username: username_lc
@@ -145,6 +149,18 @@ async function findUser(username) {
         }
     })
     return res === null ? false : true
+}
+
+async function isUserAdmin(username) {
+    const res = await worker.findUnique({
+        select: {
+            position: true
+        },
+        where: {
+            username: username
+        }
+    })
+    return res.position = 'Admin' ? true : false;
 }
 
 router.get('/getInfo', async(req, res) => {
