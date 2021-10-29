@@ -9,9 +9,9 @@ const { formatDate } = require('../services/formatDate');
 const { upload } = require('../middleware/upload')
 const fs = require('fs')
 
-const { encryptPwd } = require('../services/pwd')
+const { encryptPwd, comparePwd } = require('../services/pwd')
 
-router.get('/getStaffList', async(req, res) => {
+router.get('/getStaffList', async (req, res) => {
     if (req.payload.role != 'Admin') {
         res.status(401).send("You don't have Permission!")
     } else {
@@ -37,7 +37,7 @@ router.get('/getStaffList', async(req, res) => {
     }
 })
 
-router.post('/addWorker', upload.single('data'), async(req, res) => {
+router.post('/addWorker', upload.single('data'), async (req, res) => {
     if (req.payload.role != 'Admin') {
         res.status(401).send("You don't have Permission!")
     } else {
@@ -72,34 +72,59 @@ router.post('/addWorker', upload.single('data'), async(req, res) => {
 
 })
 
-router.delete('/delete/:username', async(req, res) => {
+router.delete('/delete/:username', async (req, res) => {
     if (req.payload.role != 'Admin') {
         res.status(401).send("You don't have Permission!");
     } else {
         const { username } = req.params
         const username_lc = username.toLowerCase();
         if (!username) {
-            res.send(400).send("Username is empty.")
+            res.status(400).send("Username is empty!")
         } else {
-            try {
-                //check if username exists
-                const isExists = await findUser(username_lc);
-                const isAdmin = await isUserAdmin(username_lc);
-                if (isAdmin) {
-                    res.status(401).send("You don't have Permission!")
-                }
-                if (!isExists) {
-                    res.status(400).send("Username not found!")
-                } else if (!isAdmin) {
-                    await worker.delete({
-                        where: {
-                            username: username_lc
+            //identify admin
+            const { admin_usr, password } = req.body
+            if (!admin_usr || !password) {
+                res.status(400).send("Username or Password is empty!")
+            } else {
+                const admin_usrlc = admin_usr.toLowerCase()
+                try {
+                    const isValid = await confirmAdmin(admin_usrlc, password);
+                    if (isValid == 200) {
+                        try {
+                            //check if username exists
+                            const isExists = await findUser(username_lc);
+                            const isAdmin = await isUserAdmin(username_lc);
+                            if (isAdmin) {
+                                res.status(401).send("You don't have Permission!")
+                            }
+                            if (!isExists) {
+                                res.status(400).send("Username not found!")
+                            } else if (!isAdmin) {
+                                await worker.delete({
+                                    where: {
+                                        username: username_lc
+                                    }
+                                })
+                                res.status(200).send(`Staff ${username_lc} has been deleted!`)
+                            }
+                        } catch (err) {
+                            res.status(500).send("Could not delete the Staff!")
                         }
-                    })
-                    res.status(200).send(`Staff ${username_lc} has been deleted!`)
+                    }
+                    if (isValid == 404) {
+                        res.status(404).send("Username does not exist!")
+                    }
+                    if (isValid == 403) {
+                        res.status(403).send("Wrong Password!")
+                    }
+                    if (isValid == 401) {
+                        res.status(401).send("You don't have permission!")
+                    }
+
+                } catch (err) {
+                    res.status(500).send("Something Went Wrong!")
                 }
-            } catch (err) {
-                res.status(500).send("Could not delete the Staff!")
+
             }
 
         }
@@ -107,17 +132,47 @@ router.delete('/delete/:username', async(req, res) => {
 
 })
 
-router.patch('/update', upload.single('data'), async(req, res) => {
+async function confirmAdmin(username, password) {
+    try {
+        const result = await worker.findUnique({
+            select: {
+                password: true
+            },
+            where: {
+                username: username
+            }
+        })
+        if (result == null) {
+            return 404
+        } else {
+            const pass = result.password
+            const resCode = await comparePwd(password, pass)
+            if (resCode == 200) {
+                return 200
+            }
+            if (resCode == 403) {
+                return 403
+            }
+            else {
+                return 401
+            }
+        }
+    } catch (err) {
+        return 500
+    }
+}
+
+router.patch('/update', upload.single('data'), async (req, res) => {
     if (req.payload.role != 'Admin') {
         res.status(401).send("You don't have Permission!")
     } else {
         try {
             const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
-                //username to lowercase
+            //username to lowercase
             data.username = data.username.toLowerCase();
             if (data.password === '') {
                 data.DOB = new Date(data.DOB)
-                await prisma.$executeRaw `UPDATE worker SET username=${data.username}, firstName=${data.firstName}, lastName=${data.lastName}, DOB=${data.DOB} WHERE position='Admin'`
+                await prisma.$executeRaw`UPDATE worker SET username=${data.username}, firstName=${data.firstName}, lastName=${data.lastName}, DOB=${data.DOB} WHERE position='Admin'`
                 res.status(200).send("Admin info has been updated!")
             } else {
                 await worker.updateMany({
@@ -160,10 +215,10 @@ async function isUserAdmin(username) {
             username: username
         }
     })
-    return res.position = 'Admin' ? true : false;
+    return res.position == 'Admin' ? true : false;
 }
 
-router.get('/getInfo', async(req, res) => {
+router.get('/getInfo', async (req, res) => {
     if (req.payload.role != "Admin") {
         res.status(401).send("You don't have Permission!");
     } else {
