@@ -4,13 +4,13 @@ module.exports = {
     signAccessToken: (username, position) => {
         return new Promise((resolve, reject) => {
             const payload = {
-                role: position
+                role: position,
+                audience: username
             }
             const secret = process.env.ACCESS_TOKEN_SECRET
             const options = {
                 expiresIn: '2h',
-                issuer: 'bagshop.com',
-                audience: username
+                issuer: 'www.jwbrand.company'
             }
             JWT.sign(payload, secret, options, (err, token) => {
                 if (err) {

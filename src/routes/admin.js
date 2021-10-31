@@ -11,6 +11,7 @@ const fs = require('fs')
 
 const { encryptPwd, comparePwd } = require('../services/pwd')
 
+const { viewAdminInfo } = require('../middleware/permissions')
 router.get('/getStaffList', async (req, res) => {
     if (req.payload.role != 'Admin') {
         res.status(401).send("You don't have Permission!")
@@ -218,20 +219,38 @@ async function isUserAdmin(username) {
     return res.position == 'Admin' ? true : false;
 }
 
-router.get('/getInfo', async (req, res) => {
+router.get('/getInfo/:username', async (req, res) => {
     if (req.payload.role != "Admin") {
         res.status(401).send("You don't have Permission!");
     } else {
-        try {
-            const adminInfo = await worker.findMany({
-                where: {
-                    position: 'Admin'
-                }
-            })
-            adminInfo[0].DOB = formatDate(adminInfo[0].DOB)
-            res.status(200).send(adminInfo);
-        } catch (err) {
-            res.status(500).send("Could not get info!")
+        const { username } = req.params
+        const username_lc = username.toLowerCase();
+        if(!username){
+            res.status(400).send("Username is empty!")
+        }else{
+            //check user token
+            if(!viewAdminInfo(username_lc, req.payload.audience)){
+                res.status(403);
+                return res.send("You don't have Permission!")
+            }
+            try {
+                const adminInfo = await worker.findMany({
+                    select:{
+                        username: true,
+                        firstName:true,
+                        lastName: true,
+                        DOB: true
+                    },
+                    where: {
+                        position: 'Admin',
+                        username: username_lc
+                    }
+                })
+                adminInfo[0].DOB = formatDate(adminInfo[0].DOB)
+                res.status(200).send(adminInfo);
+            } catch (err) {
+                res.status(500).send("Could not get info!")
+            }
         }
     }
 })
