@@ -11,7 +11,6 @@ const fs = require('fs')
 
 const { encryptPwd, comparePwd } = require('../services/pwd')
 
-const { viewAdminInfo } = require('../middleware/permissions')
 router.get('/getStaffList', async (req, res) => {
     if (req.payload.role != 'Admin') {
         res.status(401)
@@ -84,14 +83,14 @@ router.delete('/delete/:username', async (req, res) => {
         return res.send("Username is empty!")
     }
     //identify admin
-    const { admin_usr, password } = req.body
-    if (!admin_usr || !password) {
+    const { password } = req.body
+    if (!password) {
         res.status(400)
-        return res.send("Username or Password is empty!")
+        return res.send("Password is empty!")
     }
-    const admin_usrlc = admin_usr.toLowerCase()
+    const admin_usr = req.payload.audience;
     try {
-        const isValid = await confirmAdmin(admin_usrlc, password);
+        const isValid = await confirmAdmin(admin_usr, password);
         if (isValid == 200) {
             try {
                 //check if username exists
@@ -160,27 +159,17 @@ async function confirmAdmin(username, password) {
     }
 }
 
-router.patch('/update/:username', upload.single('data'), async (req, res) => {
+router.patch('/update', upload.single('data'), async (req, res) => {
     if (req.payload.role != 'Admin') {
         res.status(401)
         return res.send("You don't have Permission!")
     }
-    const { username } = req.params
-    if (!username) {
-        res.status(400);
-        return res.send("Username is empty!")
-    }
-    const username_lc = username.toLowerCase();
-    //only admin who logged in can make request
-    if (!viewAdminInfo(username_lc, req.payload.audience)) {
-        res.status(403);
-        return res.send("You don't have Permission!")
-    }
+    const username = req.payload.audience;
     try {
         const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
         if (data.password === '') {
             data.DOB = new Date(data.DOB)
-            await prisma.$executeRaw`UPDATE worker SET firstName=${data.firstName}, lastName=${data.lastName}, DOB=${data.DOB} WHERE position='Admin' AND username=${username_lc}`
+            await prisma.$executeRaw`UPDATE worker SET firstName=${data.firstName}, lastName=${data.lastName}, DOB=${data.DOB} WHERE position='Admin' AND username=${username}`
             res.status(200).send("Admin info has been updated!")
         } else {
             await worker.updateMany({
@@ -192,7 +181,7 @@ router.patch('/update/:username', upload.single('data'), async (req, res) => {
                 },
                 where: {
                     position: 'Admin',
-                    username: username_lc
+                    username: username
                 }
             })
             res.status(200).send(`Admin info has been updated!`)
@@ -225,22 +214,12 @@ async function isUserAdmin(username) {
     return res.position == 'Admin' ? true : false;
 }
 
-router.get('/getInfo/:username', async (req, res) => {
+router.get('/getInfo', async (req, res) => {
     if (req.payload.role != "Admin") {
         res.status(401)
         return res.send("You don't have Permission!");
     }
-    const { username } = req.params
-    if (!username) {
-        res.status(400)
-        return res.send("Username is empty!")
-    }
-    const username_lc = username.toLowerCase();
-    //only admin who logged in can make request
-    if (!viewAdminInfo(username_lc, req.payload.audience)) {
-        res.status(403);
-        return res.send("You don't have Permission!")
-    }
+    const username = req.payload.audience;
     try {
         const adminInfo = await worker.findMany({
             select: {
@@ -251,7 +230,7 @@ router.get('/getInfo/:username', async (req, res) => {
             },
             where: {
                 position: 'Admin',
-                username: username_lc
+                username: username
             }
         })
         adminInfo[0].DOB = formatDate(adminInfo[0].DOB)
