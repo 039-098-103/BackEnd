@@ -71,7 +71,7 @@ router.post('/addWorker', upload.single('data'), async (req, res) => {
 
 })
 
-router.delete('/delete/:username', async (req, res) => {
+router.delete('/deleteStaff/:username', async (req, res) => {
     if (req.payload.role != 'Admin') {
         res.status(401)
         return res.send("You don't have Permission!");
@@ -95,32 +95,30 @@ router.delete('/delete/:username', async (req, res) => {
             try {
                 //check if username exists
                 const isExists = await findUser(username_lc);
+                if (!isExists) {
+                    res.status(400)
+                    return res.send("Username not found!")
+                }
                 const isAdmin = await isUserAdmin(username_lc);
                 if (isAdmin) {
-                    res.status(401).send("You don't have Permission!")
+                    res.status(401)
+                    return res.send("You don't have Permission!")
                 }
-                if (!isExists) {
-                    res.status(400).send("Username not found!")
-                } else if (!isAdmin) {
-                    await worker.delete({
-                        where: {
-                            username: username_lc
-                        }
-                    })
-                    res.status(200).send(`Staff ${username_lc} has been deleted!`)
-                }
+                
+                await worker.delete({
+                    where: {
+                        username: username_lc
+                    }
+                })
+                res.status(200).send(`Staff ${username_lc} has been deleted!`)
+
             } catch (err) {
                 res.status(500).send("Could not delete the Staff!")
             }
         }
-        if (isValid == 404) {
-            res.status(404).send("Username does not exist!")
-        }
-        if (isValid == 403) {
-            res.status(403).send("Wrong Password!")
-        }
-        if (isValid == 401) {
-            res.status(401).send("You don't have permission!")
+        else {
+            res.status(isValid)
+            return res.send(resMsg(isValid))
         }
 
     } catch (err) {
@@ -240,4 +238,54 @@ router.get('/getInfo', async (req, res) => {
     }
 })
 
+//admin self delete acc
+router.delete('/delete', async (req, res) => {
+    if (req.payload.role != 'Admin') {
+        res.status(401)
+        return res.send("You don't have Permission!")
+    }
+    const { password } = req.body
+    if (!password) {
+        res.status(400)
+        return res.send("Password is empty!")
+    }
+    const username = req.payload.audience;
+    try {
+        const isValid = await confirmAdmin(username, password);
+        if (isValid == 200) {
+            try {
+                await worker.delete({
+                    where: {
+                        username: username
+                    }
+                })
+                res.status(200).send(`Admin ${username} has been deleted.`)
+            } catch (err) {
+                res.status(500)
+                return res.send("Something Went Wrong!")
+            }
+        }
+        else {
+            res.status(isValid)
+            return res.send(resMsg(isValid))
+        }
+
+    } catch (err) {
+        res.status(500)
+        return res.send("Something Went Wrong!")
+    }
+})
+
+function resMsg(resCode) {
+    switch (resCode) {
+        case 401:
+            return "You don't have Permission!"
+        case 403:
+            return "Wrong Password!"
+        case 404:
+            return "Username does not exist!"
+        case 500:
+            return "Something Went Wrong!"
+    }
+}
 module.exports = router;
