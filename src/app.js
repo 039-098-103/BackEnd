@@ -14,6 +14,7 @@ app.use((req, res, next) => {
 })
 
 app.use(express.json())
+app.use(express.static('images'))
 app.use('/api/worker/auth', require('./services/workerAuth'))
 app.use('/api/admin', authToken, require('./routes/admin'))
 app.use('/api/getProduct', require('./routes/productDetail'))
