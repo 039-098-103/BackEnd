@@ -11,6 +11,8 @@ const fs = require('fs')
 
 const { encryptPwd, comparePwd } = require('../services/pwd')
 
+const { resMsg } = require('../middleware/resMsg')
+
 router.get('/getStaffList', async (req, res) => {
     if (req.payload.role != 'Admin') {
         res.status(401)
@@ -276,16 +278,4 @@ router.delete('/delete', async (req, res) => {
     }
 })
 
-function resMsg(resCode) {
-    switch (resCode) {
-        case 401:
-            return "You don't have Permission!"
-        case 403:
-            return "Wrong Password!"
-        case 404:
-            return "Username does not exist!"
-        case 500:
-            return "Something Went Wrong!"
-    }
-}
 module.exports = router;
