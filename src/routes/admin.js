@@ -51,7 +51,7 @@ router.post('/addWorker', upload.single('data'), async (req, res) => {
         //check if username duplicate
         const isDuplicate = await findUser(data.username)
         if (isDuplicate) {
-            res.status(400)
+            res.status(409)
             return res.send("Username already exists!")
         }
         await worker.create({
