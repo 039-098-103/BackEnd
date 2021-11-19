@@ -228,9 +228,38 @@ async function findCartItem(username, id){
     })
     return result == '' ? false : true;
 }
+
+const getInfo = async (req,res)=>{
+    const username = req.payload.audience;
+    if (!findUser(username)) {
+        res.status(404)
+        return res.status("Username does not exist!")
+    }
+    try{
+        const result = await customer.findUnique({
+            select:{
+                username:true,
+                firstName:true,
+                lastName: true
+            },
+            where:{
+                username: username
+            }
+        })
+        if(result == ''){
+            res.status(404)
+            return res.send("Username not found!")
+        }
+        res.status(200).send(result)
+    }catch(err){
+        res.status(500)
+        return res.send("Something Went Wrong!")
+    }
+}
 module.exports = {
     accRegister,
     getCart,
     addToCart,
-    removeFromCart
+    removeFromCart,
+    getInfo
 }
