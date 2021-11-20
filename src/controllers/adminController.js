@@ -27,12 +27,19 @@ const getStaffList = async (req, res) => {
                 position: 'Staff'
             }
         })
+
+        if(staffList == ''){
+            res.status(404)
+            return res.send("StaffList are empty!")
+        }
+
         for (let i in staffList) {
             staffList[i].DOB = formatDate(staffList[i].DOB)
         }
-        res.send(staffList)
+        res.status(200).send(staffList)
     } catch (err) {
-        res.status(500).send("Could not get StaffList!")
+        res.status(500)
+        return res.send("Could not get StaffList!")
     }
 }
 
@@ -65,7 +72,9 @@ const addWorker = async (req, res) => {
 
         fs.unlinkSync('./tmp/data.json')
     } catch (err) {
-        res.status(500).send("Could not add user!")
+        fs.unlinkSync('./tmp/data.json')
+        res.status(500)
+        return res.send("Could not add user!")
     }
 }
 
@@ -120,7 +129,8 @@ const deleteStaff = async (req, res) => {
                 res.status(200).send(`Staff ${username_lc} has been deleted!`)
 
             } catch (err) {
-                res.status(500).send("Could not delete the Staff!")
+                res.status(500)
+                return res.send("Could not delete the Staff!")
             }
         }
         else {
@@ -129,7 +139,8 @@ const deleteStaff = async (req, res) => {
         }
 
     } catch (err) {
-        res.status(500).send("Something Went Wrong!")
+        res.status(500)
+        return res.send("Something Went Wrong!")
     }
 }
 
@@ -204,7 +215,9 @@ const updateAdmin = async (req, res) => {
         }
         fs.unlinkSync('./tmp/data.json')
     } catch (err) {
-        res.status(500).send('Could not update!')
+        fs.unlinkSync('./tmp/data.json')
+        res.status(500)
+        return res.send('Could not update!')
     }
 
 }
@@ -231,7 +244,8 @@ const getAdminInfo = async (req, res) => {
         adminInfo[0].DOB = formatDate(adminInfo[0].DOB)
         res.status(200).send(adminInfo);
     } catch (err) {
-        res.status(500).send("Could not get info!")
+        res.status(500)
+        return res.send("Could not get info!")
     }
 }
 

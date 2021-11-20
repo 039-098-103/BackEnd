@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client')
 const { customer, cartItem, productDetail } = new PrismaClient()
+const prisma = new PrismaClient()
 const fs = require('fs')
 const { encryptPwd } = require('../services/pwd')
 
@@ -27,7 +28,8 @@ const accRegister = async (req, res) => {
         fs.unlinkSync('./tmp/data.json')
     } catch (err) {
         res.status(500)
-        return res.send('Something went wrong!')
+        fs.unlinkSync('./tmp/data.json')
+        return res.send('Something Went Wrong!')
     }
 }
 
@@ -40,7 +42,7 @@ async function findUser(username) {
     return result === null ? false : true
 }
 
-const getCart = async (req,res)=>{
+const getCart = async (req, res) => {
     const username = req.payload.audience;
     if (!findUser(username)) {
         res.status(404)
@@ -89,7 +91,7 @@ const getCart = async (req,res)=>{
     }
 }
 
-const addToCart = async(req,res)=>{
+const addToCart = async (req, res) => {
     const id = Number(req.params.id)
 
     if (!id) {
@@ -103,7 +105,7 @@ const addToCart = async(req,res)=>{
     }
 
     const itemExist = await findItem(id);
- 
+
     if (!itemExist) {
         res.status(404)
         return res.send("Item does not exist!")
@@ -172,7 +174,7 @@ async function checkBagType(username, pid) {
     const bid = prod[0].Product.bagTypeId
     for (let i in bag) {
         let pbid = bag[i].ProductDetail.Product.bagTypeId
-        if(pbid == bid){
+        if (pbid == bid) {
             return true
         }
     }
@@ -187,41 +189,41 @@ async function findItem(itemId) {
     return result == '' ? false : true;
 }
 
-const removeFromCart = async(req,res)=>{
+const removeFromCart = async (req, res) => {
     const id = Number(req.params.id)
-    if(!id){
+    if (!id) {
         res.status(400)
         return res.send("CartItem id is required!")
     }
     const username = req.payload.audience;
-    if(!findUser(username)){
+    if (!findUser(username)) {
         res.status(404)
         return res.send("Username does not exist!")
     }
 
     const itemExist = await findCartItem(username, id);
-    if(!itemExist){
+    if (!itemExist) {
         res.status(404)
         return res.send("Item does not exist!")
     }
 
-    try{
+    try {
         await cartItem.delete({
-            where:{
+            where: {
                 cartItemId: id
             }
         })
         res.status(200).send("Item deleted!")
-    }catch(err){
+    } catch (err) {
         res.status(500)
         return res.send("Something Went Wrong!")
     }
 
 }
 
-async function findCartItem(username, id){
+async function findCartItem(username, id) {
     const result = await cartItem.findMany({
-        where:{
+        where: {
             username: username,
             cartItemId: id
         }
@@ -229,31 +231,62 @@ async function findCartItem(username, id){
     return result == '' ? false : true;
 }
 
-const getInfo = async (req,res)=>{
+const getInfo = async (req, res) => {
     const username = req.payload.audience;
     if (!findUser(username)) {
         res.status(404)
         return res.status("Username does not exist!")
     }
-    try{
+    try {
         const result = await customer.findUnique({
-            select:{
-                username:true,
-                firstName:true,
+            select: {
+                username: true,
+                firstName: true,
                 lastName: true
             },
-            where:{
+            where: {
                 username: username
             }
         })
-        if(result == ''){
+        if (result == '') {
             res.status(404)
             return res.send("Username not found!")
         }
         res.status(200).send(result)
-    }catch(err){
+    } catch (err) {
         res.status(500)
         return res.send("Something Went Wrong!")
+    }
+}
+
+const editInfo = async (req, res) => {
+    const username = req.payload.audience
+    if (!username) {
+        res.status(404)
+        return res.send("Username does not exist!")
+    }
+
+    try {
+        const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
+        if (data.password === '') {
+            await prisma.$executeRaw`UPDATE customer SET firstName=${data.firstName}, lastName=${data.lastName}, WHERE username=${username}`
+        } else {
+            await customer.update({
+                data: {
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    password: await encryptPwd(data.password)
+                }, where: {
+                    username: username
+                }
+            })
+        }
+        res.status(200).send("Your info has been updated!")
+        fs.unlinkSync('./tmp/data.json')
+    } catch (err) {
+        fs.unlinkSync('./tmp/data.json')
+        res.status(500)
+        return res.send("Could not update info!")
     }
 }
 module.exports = {
@@ -261,5 +294,6 @@ module.exports = {
     getCart,
     addToCart,
     removeFromCart,
-    getInfo
+    getInfo,
+    editInfo
 }
