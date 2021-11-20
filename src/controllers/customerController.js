@@ -1,8 +1,9 @@
 const { PrismaClient } = require('@prisma/client')
-const { customer, cartItem, productDetail } = new PrismaClient()
+const { customer, cartItem, productDetail, orders, orderDetail } = new PrismaClient()
 const prisma = new PrismaClient()
 const fs = require('fs')
 const { encryptPwd } = require('../services/pwd')
+const { formatDate } = require('../services/formatDate')
 
 const accRegister = async (req, res) => {
     try {
@@ -28,7 +29,7 @@ const accRegister = async (req, res) => {
         fs.unlinkSync('./tmp/data.json')
     } catch (err) {
         res.status(500)
-        fs.unlinkSync('./tmp/data.json')
+        // fs.unlinkSync('./tmp/data.json')
         return res.send('Something Went Wrong!')
     }
 }
@@ -235,7 +236,7 @@ const getInfo = async (req, res) => {
     const username = req.payload.audience;
     if (!findUser(username)) {
         res.status(404)
-        return res.status("Username does not exist!")
+        return res.send("Username does not exist!")
     }
     try {
         const result = await customer.findUnique({
@@ -248,10 +249,6 @@ const getInfo = async (req, res) => {
                 username: username
             }
         })
-        if (result == '') {
-            res.status(404)
-            return res.send("Username not found!")
-        }
         res.status(200).send(result)
     } catch (err) {
         res.status(500)
@@ -261,15 +258,15 @@ const getInfo = async (req, res) => {
 
 const editInfo = async (req, res) => {
     const username = req.payload.audience
-    if (!username) {
+    if (!findUser(username)) {
         res.status(404)
         return res.send("Username does not exist!")
     }
-
     try {
         const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
         if (data.password === '') {
-            await prisma.$executeRaw`UPDATE customer SET firstName=${data.firstName}, lastName=${data.lastName}, WHERE username=${username}`
+            await prisma.$executeRaw`UPDATE customer SET firstName=${data.firstName}, lastName=${data.lastName} WHERE username=${username}`
+            res.status(200).send("Your info has been updated!")
         } else {
             await customer.update({
                 data: {
@@ -280,13 +277,76 @@ const editInfo = async (req, res) => {
                     username: username
                 }
             })
+            res.status(200).send("Your info has been updated!")
         }
-        res.status(200).send("Your info has been updated!")
         fs.unlinkSync('./tmp/data.json')
+
     } catch (err) {
         fs.unlinkSync('./tmp/data.json')
         res.status(500)
         return res.send("Could not update info!")
+    }
+}
+
+const getOrderList = async (req, res) => {
+    const username = req.payload.audience
+    if (!findUser(username)) {
+        res.status(404)
+        return res.send("Username does not exist!")
+    }
+    try {
+        const result = await orders.findMany({
+            include: {
+                OrderDetail: {
+                    include:{
+                        ProductDetail:{
+                            include:{
+                                Product: {
+                                    include:{
+                                        BagType: true
+                                    }
+                                },
+                                Color:true
+                            }
+                        }
+                    }
+                }
+            },
+            where: {
+                username: username
+            }
+        })
+        const ord = []
+        for(let i in result){
+            const orderId = result[i].orderId
+            const quantity = result[i].quantity
+            const total = result[i].total
+            const deliveryDate = formatDate(result[i].deliveryDate)
+            const address = result[i].address
+            const Product = []
+            const od = result[i].OrderDetail
+            for(let j in od){
+                const productId = od[j].ProductDetail.productId
+                const productName = od[j].ProductDetail.Product.productName
+                const price = od[j].ProductDetail.Product.price
+                const imageName = od[j].ProductDetail.Product.imageName
+                const bagTypeId = od[j].ProductDetail.Product.bagTypeId
+                const bagTypeName = od[j].ProductDetail.Product.BagType.bagTypeName
+                const colorId = od[j].ProductDetail.Color.colorId
+                const colorName = od[j].ProductDetail.Color.colorName
+                Product[j] = { productId, productName, price, imageName, bagTypeId, bagTypeName, colorId, colorName }
+              
+            }
+            ord[i] = { orderId, quantity, total, deliveryDate, address, Product }
+        }
+        if (result == '') {
+            res.status(404)
+            return res.send("Orders are empty!")
+        }
+        res.status(200).send(ord)
+    } catch (err) {
+        res.status(500)
+        return res.send("Something Went Wrong!")
     }
 }
 module.exports = {
@@ -295,5 +355,6 @@ module.exports = {
     addToCart,
     removeFromCart,
     getInfo,
-    editInfo
+    editInfo,
+    getOrderList
 }

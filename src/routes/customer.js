@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const { upload } = require('../middleware/upload')
-const { accRegister, getCart, addToCart, removeFromCart, getInfo, editInfo } = require('../controllers/customerController')
+const { accRegister, getCart, addToCart, removeFromCart, getInfo, editInfo, getOrderList } = require('../controllers/customerController')
 const { authToken } = require('../middleware/accessToken')
 
 router.post('/register', upload.single('data'), accRegister);
@@ -14,5 +14,7 @@ router.delete('/removeFromCart/:id', authToken, removeFromCart)
 router.get('/accountInfo', authToken, getInfo)
 
 router.patch('/editInfo', authToken, upload.single('data') ,editInfo)
+
+router.get('/getOrders', authToken, getOrderList )
 
 module.exports = router;
