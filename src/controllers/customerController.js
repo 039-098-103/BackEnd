@@ -75,6 +75,7 @@ const getCart = async (req, res) => {
         for (let i in result) {
             const cartItemId = result[i].cartItemId;
             const productId = result[i].ProductDetail.Product.productId;
+            const productDetailId = result[i].ProductDetail.productDetailId
             const productName = result[i].ProductDetail.Product.productName;
             const price = result[i].ProductDetail.Product.price;
             const imageName = result[i].ProductDetail.Product.imageName;
@@ -82,7 +83,7 @@ const getCart = async (req, res) => {
             const bagTypeName = result[i].ProductDetail.Product.BagType.bagTypeName;
             const colorId = result[i].ProductDetail.Color.colorId;
             const colorName = result[i].ProductDetail.Color.colorName;
-            item[i] = { cartItemId, productId, productName, price, imageName, bagTypeId, bagTypeName, colorId, colorName }
+            item[i] = { cartItemId, productId, productName, price, imageName, bagTypeId, bagTypeName, colorId, colorName, productDetailId }
         }
 
         res.status(200).send(item);
@@ -298,15 +299,15 @@ const getOrderList = async (req, res) => {
         const result = await orders.findMany({
             include: {
                 OrderDetail: {
-                    include:{
-                        ProductDetail:{
-                            include:{
+                    include: {
+                        ProductDetail: {
+                            include: {
                                 Product: {
-                                    include:{
+                                    include: {
                                         BagType: true
                                     }
                                 },
-                                Color:true
+                                Color: true
                             }
                         }
                     }
@@ -317,7 +318,7 @@ const getOrderList = async (req, res) => {
             }
         })
         const ord = []
-        for(let i in result){
+        for (let i in result) {
             const orderId = result[i].orderId
             const quantity = result[i].quantity
             const total = result[i].total
@@ -325,7 +326,7 @@ const getOrderList = async (req, res) => {
             const address = result[i].address
             const Product = []
             const od = result[i].OrderDetail
-            for(let j in od){
+            for (let j in od) {
                 const productId = od[j].ProductDetail.productId
                 const productName = od[j].ProductDetail.Product.productName
                 const price = od[j].ProductDetail.Product.price
@@ -335,7 +336,7 @@ const getOrderList = async (req, res) => {
                 const colorId = od[j].ProductDetail.Color.colorId
                 const colorName = od[j].ProductDetail.Color.colorName
                 Product[j] = { productId, productName, price, imageName, bagTypeId, bagTypeName, colorId, colorName }
-              
+
             }
             ord[i] = { orderId, quantity, total, deliveryDate, address, Product }
         }
@@ -349,6 +350,51 @@ const getOrderList = async (req, res) => {
         return res.send("Something Went Wrong!")
     }
 }
+
+const addOrder = async (req, res) => {
+    const username = req.payload.audience
+    if (!findUser(username)) {
+        res.status(404)
+        return res.send("Username does not exist!")
+    }
+    try {
+        const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
+        await orders.createMany({
+            data: {
+                address: data.address,
+                deliveryDate: new Date(data.deliveryDate),
+                quantity: data.quantity,
+                total: data.total,
+                username: username
+            }
+        })
+
+        const order_res = await prisma.$queryRaw`SELECT orderId from Orders where username=${username} order by orderId DESC limit 1`
+        const o_id = order_res[0].orderId
+
+        for (let i in data.Product) {
+            await orderDetail.createMany({
+                data: {
+                    orderId: o_id,
+                    productDetailId: data.Product[i].productDetailId
+                }
+            })
+
+            await cartItem.delete({
+                where:{
+                    cartItemId: data.Product[i].cartItemId
+                }
+            })
+        }
+        fs.unlinkSync('./tmp/data.json')
+        res.status(200).send("Successfully ordered.")
+    } catch (err) {
+        res.status(500)
+        fs.unlinkSync('./tmp/data.json')
+        return res.send("Something Went Wrong!")
+    }
+}
+
 module.exports = {
     accRegister,
     getCart,
@@ -356,5 +402,6 @@ module.exports = {
     removeFromCart,
     getInfo,
     editInfo,
-    getOrderList
+    getOrderList,
+    addOrder
 }
