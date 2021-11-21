@@ -6,9 +6,7 @@ const { formatDate } = require('../services/formatDate')
 
 const fs = require('fs')
 
-const { encryptPwd, comparePwd } = require('../services/pwd')
-
-const { resMsg } = require('../middleware/resMsg')
+const { encryptPwd } = require('../services/pwd')
 
 const getStaffList = async (req, res) => {
     if (req.payload.role != 'Admin') {
@@ -28,7 +26,7 @@ const getStaffList = async (req, res) => {
             }
         })
 
-        if(staffList == ''){
+        if (staffList == '') {
             res.status(404)
             return res.send("StaffList are empty!")
         }
@@ -98,49 +96,30 @@ const deleteStaff = async (req, res) => {
         res.status(400)
         return res.send("Username is empty!")
     }
-    //identify admin
-    const { password } = req.body
-    if (!password) {
-        res.status(400)
-        return res.send("Password is empty!")
-    }
-    const admin_usr = req.payload.audience;
+
     try {
-        const isValid = await confirmAdmin(admin_usr, password);
-        if (isValid == 200) {
-            try {
-                //check if username exists
-                const isExists = await findUser(username_lc);
-                if (!isExists) {
-                    res.status(400)
-                    return res.send("Username not found!")
-                }
-                const isAdmin = await isUserAdmin(username_lc);
-                if (isAdmin) {
-                    res.status(401)
-                    return res.send("You don't have Permission!")
-                }
+        //check if username exists
+        const isExists = await findUser(username_lc);
+        if (!isExists) {
+            res.status(400)
+            return res.send("Username not found!")
+        }
+        const isAdmin = await isUserAdmin(username_lc);
+        if (isAdmin) {
+            res.status(401)
+            return res.send("You don't have Permission!")
+        }
 
-                await worker.delete({
-                    where: {
-                        username: username_lc
-                    }
-                })
-                res.status(200).send(`Staff ${username_lc} has been deleted!`)
-
-            } catch (err) {
-                res.status(500)
-                return res.send("Could not delete the Staff!")
+        await worker.delete({
+            where: {
+                username: username_lc
             }
-        }
-        else {
-            res.status(isValid)
-            return res.send(resMsg(isValid))
-        }
+        })
+        res.status(200).send(`Staff ${username_lc} has been deleted!`)
 
     } catch (err) {
         res.status(500)
-        return res.send("Something Went Wrong!")
+        return res.send("Could not delete the Staff!")
     }
 }
 
@@ -154,36 +133,6 @@ async function isUserAdmin(username) {
         }
     })
     return res.position == 'Admin' ? true : false;
-}
-
-async function confirmAdmin(username, password) {
-    try {
-        const result = await worker.findUnique({
-            select: {
-                password: true
-            },
-            where: {
-                username: username
-            }
-        })
-        if (result == null) {
-            return 404
-        } else {
-            const pass = result.password
-            const resCode = await comparePwd(password, pass)
-            if (resCode == 200) {
-                return 200
-            }
-            if (resCode == 403) {
-                return 403
-            }
-            else {
-                return 401
-            }
-        }
-    } catch (err) {
-        return 500
-    }
 }
 
 const updateAdmin = async (req, res) => {
@@ -254,36 +203,23 @@ const deleteAdmin = async (req, res) => {
         res.status(401)
         return res.send("You don't have Permission!")
     }
-    const { password } = req.body
-    if (!password) {
-        res.status(400)
-        return res.send("Password is empty!")
-    }
+
     const username = req.payload.audience;
+
     try {
-        const isValid = await confirmAdmin(username, password);
-        if (isValid == 200) {
-            try {
-                await worker.delete({
-                    where: {
-                        username: username
-                    }
-                })
-                res.status(200).send(`Admin ${username} has been deleted.`)
-            } catch (err) {
-                res.status(500)
-                return res.send("Something Went Wrong!")
+        await worker.delete({
+            where: {
+                username: username
             }
-        }
-        else {
-            res.status(isValid)
-            return res.send(resMsg(isValid))
-        }
+        })
+        res.status(200).send(`Admin ${username} has been deleted.`)
     } catch (err) {
         res.status(500)
         return res.send("Something Went Wrong!")
     }
 }
+
+
 module.exports = {
     getStaffList,
     addWorker,
