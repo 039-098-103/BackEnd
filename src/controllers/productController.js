@@ -37,6 +37,9 @@ const getProduct = async(req,res)=>{
 function colorArray(pds) {
     return pds.reduce(function (a, b) {
         (a[b.productId] = a[b.productId] || []).push(b.Color)
+        for (const i in b.Color) {
+            b.Color['productDetailId'] = b.productDetailId
+        }
         return a
     }, {})
 }
@@ -80,14 +83,12 @@ const getProductById = async(req,res)=>{
                 productId: Number(id)
             }
         })
-        
         if(products == '' || pds == ''){
             res.status(404)
             return res.send("Products are empty!")
         }
         const colors = colorArray(pds)
         pushColor(products, pds, colors)
-
         res.status(200).send(products)
     } catch (err) {
         res.status(500)
