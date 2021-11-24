@@ -6,13 +6,9 @@ const { formatDate } = require('../services/formatDate')
 
 const fs = require('fs')
 
-const { encryptPwd } = require('../services/pwd')
+const { hashPwd } = require('../services/pwd')
 
 const getStaffList = async (req, res) => {
-    if (req.payload.role != 'Admin') {
-        res.status(401)
-        return res.send("You don't have Permission!")
-    }
     try {
         const staffList = await worker.findMany({
             select: {
@@ -42,15 +38,11 @@ const getStaffList = async (req, res) => {
 }
 
 const addWorker = async (req, res) => {
-    if (req.payload.role != 'Admin') {
-        res.status(401)
-        return res.send("You don't have Permission!")
-    }
     try {
         const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'));
-        //username to lowercase
+
         data.username = data.username.toLowerCase();
-        //check if username duplicate
+
         const isDuplicate = await findUser(data.username)
         if (isDuplicate) {
             res.status(409)
@@ -59,18 +51,16 @@ const addWorker = async (req, res) => {
         await worker.create({
             data: {
                 username: data.username,
-                password: await encryptPwd(data.password),
+                password: await hashPwd(data.password),
                 firstName: data.firstName,
                 lastName: data.lastName,
                 DOB: new Date(data.DOB),
                 position: data.position
             }
         })
+        fs.unlinkSync('./tmp/data.json')
         res.status(200).send(`${data.position} ${data.username} has been created!`)
-
-        fs.unlinkSync('./tmp/data.json')
     } catch (err) {
-        fs.unlinkSync('./tmp/data.json')
         res.status(500)
         return res.send("Could not add user!")
     }
@@ -86,10 +76,6 @@ async function findUser(username) {
 }
 
 const deleteStaff = async (req, res) => {
-    if (req.payload.role != 'Admin') {
-        res.status(401)
-        return res.send("You don't have Permission!");
-    }
     const { username } = req.params
     const username_lc = username.toLowerCase();
     if (!username) {
@@ -98,7 +84,6 @@ const deleteStaff = async (req, res) => {
     }
 
     try {
-        //check if username exists
         const isExists = await findUser(username_lc);
         if (!isExists) {
             res.status(400)
@@ -136,10 +121,6 @@ async function isUserAdmin(username) {
 }
 
 const updateAdmin = async (req, res) => {
-    if (req.payload.role != 'Admin') {
-        res.status(401)
-        return res.send("You don't have Permission!")
-    }
     const username = req.payload.audience;
     try {
         const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
@@ -150,13 +131,12 @@ const updateAdmin = async (req, res) => {
         } else {
             await worker.updateMany({
                 data: {
-                    password: await encryptPwd(data.password),
+                    password: await hashPwd(data.password),
                     firstName: data.firstName,
                     lastName: data.lastName,
                     DOB: new Date(data.DOB)
                 },
                 where: {
-                    position: 'Admin',
                     username: username
                 }
             })
@@ -172,10 +152,6 @@ const updateAdmin = async (req, res) => {
 }
 
 const getAdminInfo = async (req, res) => {
-    if (req.payload.role != "Admin") {
-        res.status(401)
-        return res.send("You don't have Permission!");
-    }
     const username = req.payload.audience;
     try {
         const adminInfo = await worker.findMany({
@@ -187,7 +163,6 @@ const getAdminInfo = async (req, res) => {
                 position: true
             },
             where: {
-                position: 'Admin',
                 username: username
             }
         })
@@ -200,13 +175,7 @@ const getAdminInfo = async (req, res) => {
 }
 
 const deleteAdmin = async (req, res) => {
-    if (req.payload.role != 'Admin') {
-        res.status(401)
-        return res.send("You don't have Permission!")
-    }
-
     const username = req.payload.audience;
-
     try {
         await worker.delete({
             where: {

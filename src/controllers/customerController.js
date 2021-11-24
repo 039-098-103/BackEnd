@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client')
 const { customer, cartItem, productDetail, orders, orderDetail } = new PrismaClient()
 const prisma = new PrismaClient()
 const fs = require('fs')
-const { encryptPwd } = require('../services/pwd')
+const { hashPwd } = require('../services/pwd')
 const { formatDate } = require('../services/formatDate')
 
 const accRegister = async (req, res) => {
@@ -20,7 +20,7 @@ const accRegister = async (req, res) => {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 username: data.username,
-                password: await encryptPwd(data.password)
+                password: await hashPwd(data.password)
             }
         })
 
@@ -28,8 +28,8 @@ const accRegister = async (req, res) => {
 
         fs.unlinkSync('./tmp/data.json')
     } catch (err) {
+        fs.unlinkSync('./tmp/data.json')
         res.status(500)
-        // fs.unlinkSync('./tmp/data.json')
         return res.send('Something Went Wrong!')
     }
 }
@@ -273,7 +273,7 @@ const editInfo = async (req, res) => {
                 data: {
                     firstName: data.firstName,
                     lastName: data.lastName,
-                    password: await encryptPwd(data.password)
+                    password: await hashPwd(data.password)
                 }, where: {
                     username: username
                 }

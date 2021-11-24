@@ -10,7 +10,7 @@ async function comparePwd(inp, hashedPwd) {
     }
 }
 
-async function encryptPwd(rawPwd) {
+async function hashPwd(rawPwd) {
     const salt = await bcrypt.genSalt(10);
     const hashedPwd = await bcrypt.hash(rawPwd, salt)
     return hashedPwd
@@ -18,5 +18,5 @@ async function encryptPwd(rawPwd) {
 
 module.exports = {
     comparePwd,
-    encryptPwd
+    hashPwd
 }
