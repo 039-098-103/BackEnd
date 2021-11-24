@@ -183,7 +183,8 @@ const getAdminInfo = async (req, res) => {
                 username: true,
                 firstName: true,
                 lastName: true,
-                DOB: true
+                DOB: true,
+                position: true
             },
             where: {
                 position: 'Admin',
