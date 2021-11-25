@@ -23,26 +23,30 @@ router.post('/', async(req, res) => {
                 }
             })
             if (result == '') {
-                res.status(404).send('Username does not exist!')
+                res.status(404)
+                return res.send('Username does not exist!')
             } else {
                 const pass = result[0].password
                 const pos = result[0].position
 
                 const resCode = await comparePwd(password, pass)
                 if (resCode == 403) {
-                    res.status(403).send("Wrong Password!")
+                    res.status(403)
+                    return res.send("Wrong Password!")
                 }
                 if (resCode == 200) {
                     const token = await signAccessToken(username_lc, pos)
                     res.status(200).send(token)
                 } else {
-                    res.status(401).send("You don't have permission!")
+                    res.status(401)
+                    return res.send("You don't have permission!")
                 }
 
             }
 
         } catch (err) {
-            res.status(500).send("Something Went Wrong!")
+            res.status(500)
+            return res.send("Something Went Wrong!")
         }
     }
 })

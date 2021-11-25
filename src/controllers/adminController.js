@@ -124,7 +124,7 @@ const updateAdmin = async (req, res) => {
     const username = req.payload.audience;
     try {
         const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
-        if (data.password === '') {
+        if (data.password === '' || data.password === ' ') {
             data.DOB = new Date(data.DOB)
             await prisma.$executeRaw`UPDATE worker SET firstName=${data.firstName}, lastName=${data.lastName}, DOB=${data.DOB} WHERE position='Admin' AND username=${username}`
             res.status(200).send("Admin info has been updated!")
