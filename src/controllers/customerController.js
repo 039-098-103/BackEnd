@@ -359,12 +359,22 @@ const addOrder = async (req, res) => {
     }
     try {
         const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
+
+        var total = 0
+        var quantity = 0
+        for(let i in data){
+            total += Number(data[i].price)
+            quantity += 1
+           
+        }
+        const deliveryDate = new Date(Date.now() + 12096e5)
+        
         await orders.createMany({
-            data: {
-                address: data.address,
-                deliveryDate: new Date(data.deliveryDate),
-                quantity: data.quantity,
-                total: data.total,
+            data:{
+                address: "-",
+                deliveryDate: deliveryDate,
+                quantity: quantity,
+                total: total,
                 username: username
             }
         })
@@ -372,23 +382,41 @@ const addOrder = async (req, res) => {
         const order_res = await prisma.$queryRaw`SELECT orderId from Orders where username=${username} order by orderId DESC limit 1`
         const o_id = order_res[0].orderId
 
-        for (let i in data.Product) {
+        for(let i in data){
             await orderDetail.createMany({
-                data: {
+                data:{
                     orderId: o_id,
-                    productDetailId: data.Product[i].productDetailId
+                    productDetailId: data[i].productDetailId
                 }
             })
-
             await cartItem.delete({
                 where:{
-                    cartItemId: data.Product[i].cartItemId
+                    cartItemId: data[i].cartItemId
                 }
             })
         }
+        
         fs.unlinkSync('./tmp/data.json')
         res.status(200).send("Successfully ordered.")
     } catch (err) {
+        res.status(500)
+        fs.unlinkSync('./tmp/data.json')
+        return res.send("Something Went Wrong!")
+    }
+}
+
+const editAddress = async(req,res)=>{
+    const username = req.payload.audience
+    if(!findUser(username)){
+        res.status(404)
+        return res.send("Username does not exist!")
+    }
+    try{
+        const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
+        await prisma.$executeRaw`UPDATE orders set address=${data.address} where username=${username} and orderId=${data.orderId}`
+        fs.unlinkSync('./tmp/data.json')
+        res.status(200).send("Address has been updated.")
+    }catch(err){
         res.status(500)
         fs.unlinkSync('./tmp/data.json')
         return res.send("Something Went Wrong!")
@@ -403,5 +431,6 @@ module.exports = {
     getInfo,
     editInfo,
     getOrderList,
-    addOrder
+    addOrder,
+    editAddress
 }
