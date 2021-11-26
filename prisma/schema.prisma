@@ -66,7 +66,7 @@ model Product {
 }
 
 model ProductDetail {
-  productDetailId Int           @id
+  productDetailId Int           @id @default(autoincrement())
   productId       Int
   colorId         Int
   Color           Color         @relation(fields: [colorId], references: [colorId], onUpdate: Restrict, map: "ProductDetail_Color_FK")
