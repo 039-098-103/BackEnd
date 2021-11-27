@@ -35,7 +35,7 @@ router.post('/', async (req, res) => {
         }
         if (resCode == 200) {
             const token = await signAccessToken(username_lc, pos)
-            res.status(200).send(token)
+            res.status(200).send({ token: token, role: pos })
         }
 
     } catch (err) {

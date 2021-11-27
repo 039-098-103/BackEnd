@@ -5,7 +5,7 @@ const { worker } = new PrismaClient();
 const { comparePwd } = require('./pwd')
 const { signAccessToken } = require('../middleware/accessToken')
 
-router.post('/', async(req, res) => {
+router.post('/', async (req, res) => {
     const { username, password } = req.body
     if (!username || !password) {
         res.status(400).send("Username or Password is empty!")
@@ -36,7 +36,7 @@ router.post('/', async(req, res) => {
                 }
                 if (resCode == 200) {
                     const token = await signAccessToken(username_lc, pos)
-                    res.status(200).send(token)
+                    res.status(200).send({ token: token, role: pos })
                 } else {
                     res.status(401)
                     return res.send("You don't have permission!")
