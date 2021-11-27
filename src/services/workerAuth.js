@@ -30,8 +30,8 @@ router.post('/', async (req, res) => {
                 const pos = result[0].position
 
                 const resCode = await comparePwd(password, pass)
-                if (resCode == 403) {
-                    res.status(403)
+                if (resCode == 401) {
+                    res.status(401)
                     return res.send("Wrong Password!")
                 }
                 if (resCode == 200) {

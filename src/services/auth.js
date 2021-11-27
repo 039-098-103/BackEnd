@@ -30,8 +30,8 @@ router.post('/', async (req, res) => {
         const pos = 'Customer'
 
         const resCode = await comparePwd(password, pass)
-        if (resCode == 403) {
-            res.status(403).send('Wrong Password!')
+        if (resCode == 401) {
+            res.status(401).send('Wrong Password!')
         }
         if (resCode == 200) {
             const token = await signAccessToken(username_lc, pos)

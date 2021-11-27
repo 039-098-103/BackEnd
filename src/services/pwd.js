@@ -4,7 +4,7 @@ async function comparePwd(inp, hashedPwd) {
     var res;
     const isValid = await bcrypt.compare(inp, hashedPwd)
     if (!isValid) {
-        return res = 403
+        return res = 401
     } else {
         return res = 200
     }
