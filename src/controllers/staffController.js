@@ -30,7 +30,6 @@ const getInfo = async (req, res) => {
         res.status(200).send(result)
     } catch (err) {
         res.status(500)
-        console.log(err);
         return res.send("Something Went Wrong!")
     }
 
@@ -193,9 +192,79 @@ async function addColors(pid, colors){
         })
     }
 }
+
+const editProduct = async(req,res)=>{
+    const { id } = req.params
+    if(!id){
+        res.status(400)
+        return res.send("ProductId is required!")
+    }
+    if(!findProduct(Number(id))){
+        res.status(404)
+        return res.send("Product does not exist!")
+    }
+    try{
+        const data = JSON.parse(fs.readFileSync('./tmp/data.json'))
+        const oldImgName = await findImg(Number(id))
+        fs.unlinkSync(`./images/${oldImgName}`)
+        await product.updateMany({
+            data:{
+                productName: data.productName,
+                productDes: data.productDes,
+                price: data.price,
+                bagTypeId: data.bagTypeId,
+                imageName: getImgName()
+            },
+            where:{
+                productId: Number(id)
+            }
+        })
+        const clrs = data.Color
+        await deleteColors(Number(id))
+        addColors(Number(id), clrs)
+        fs.unlinkSync('./tmp/data.json')
+        res.status(200).send("Product has been updated!")
+    }catch(err){
+        res.status(500)
+        fs.unlinkSync('./tmp/data.json')
+        return res.send("Something Went Wrong!")
+    }
+
+}
+
+async function findProduct(pid){
+    const result = await product.findUnique({
+        where:{
+            productId: pid
+        }
+    })
+
+    return result === null ? false : true;
+}
+
+async function findImg(pid){
+    const result = await product.findUnique({
+        select:{
+            imageName: true
+        },
+        where:{
+            productId: pid
+        }
+    })
+    return result.imageName
+}
+
+async function deleteColors(pid){
+    await productDetail.deleteMany({
+        where:{
+            productId: pid
+        }
+    })
+}
 module.exports = {
     getInfo,
     updateInfo,
     getOrder,
     addProduct,
+    editProduct
 }

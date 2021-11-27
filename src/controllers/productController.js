@@ -3,14 +3,12 @@ const { product, productDetail } = new PrismaClient()
 
 const getProduct = async(req,res)=>{
     try {
-        //get all products with bagtype
         const products = await product.findMany({
             include: {
                 BagType: true
             }
         })
 
-        //get colors and pid
         const pds = await productDetail.findMany({
             include: {
                 Product: {
