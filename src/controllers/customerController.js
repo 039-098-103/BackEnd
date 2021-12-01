@@ -112,7 +112,15 @@ const addToCart = async (req, res) => {
         res.status(404)
         return res.send("Item does not exist!")
     }
-
+    const itemInCart = await cartItem.count({
+        where:{
+            username: username
+        }
+    })
+    if(itemInCart == 30){
+        res.status(405)
+        return res.send("Items in Cart is full!.")
+    }
     try {
         const isAdded = await findItemInCart(username, id)
         const dupBagType = await checkBagType(username, id);
