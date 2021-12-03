@@ -21,6 +21,4 @@ router.post('/checkout', authToken, upload.single('data'), addOrder )
 
 router.patch('/updateCart/:id/:pid', authToken, updateCart)
 
-router.get('/getCartItem/:id', authToken,getCartById)
-
 module.exports = router;
