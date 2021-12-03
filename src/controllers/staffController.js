@@ -160,7 +160,7 @@ const addProduct = async (req, res) => {
     try {
         const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
         await product.create({
-            data:{
+            data: {
                 productName: data.productName,
                 productDes: data.productDes,
                 price: data.price,
@@ -182,10 +182,10 @@ const addProduct = async (req, res) => {
     }
 }
 
-async function addColors(pid, colors){
-    for(let i in colors){
+async function addColors(pid, colors) {
+    for (let i in colors) {
         await productDetail.create({
-            data:{
+            data: {
                 productId: pid,
                 colorId: colors[i].colorId,
             }
@@ -193,27 +193,32 @@ async function addColors(pid, colors){
     }
 }
 
-const editProduct = async(req,res)=>{
+const editProduct = async (req, res) => {
     const { id } = req.params
-    if(!id){
+    if (!id) {
         res.status(400)
         return res.send("ProductId is required!")
     }
-    if(!findProduct(Number(id))){
+    if (!findProduct(Number(id))) {
         res.status(404)
         return res.send("Product does not exist!")
     }
-    try{
+    try {
         const data = JSON.parse(fs.readFileSync('./tmp/data.json'))
         const oldImgName = await findImg(Number(id))
-        fs.unlinkSync(`./images/${oldImgName}`)
+        var imgName;
+        if (!getImgName() == '') {
+            imgName = getImgName()
+            fs.unlinkSync(`./images/${oldImgName}`)
+        }
+        imgName = oldImgName
         await product.updateMany({
             data:{
                 productName: data.productName,
                 productDes: data.productDes,
                 price: data.price,
                 bagTypeId: data.bagTypeId,
-                imageName: getImgName()
+                imageName: imgName
             },
             where:{
                 productId: Number(id)
@@ -224,7 +229,7 @@ const editProduct = async(req,res)=>{
         addColors(Number(id), clrs)
         fs.unlinkSync('./tmp/data.json')
         res.status(200).send("Product has been updated!")
-    }catch(err){
+    } catch (err) {
         res.status(500)
         fs.unlinkSync('./tmp/data.json')
         return res.send("Something Went Wrong!")
@@ -232,9 +237,9 @@ const editProduct = async(req,res)=>{
 
 }
 
-async function findProduct(pid){
+async function findProduct(pid) {
     const result = await product.findUnique({
-        where:{
+        where: {
             productId: pid
         }
     })
@@ -242,21 +247,21 @@ async function findProduct(pid){
     return result === null ? false : true;
 }
 
-async function findImg(pid){
+async function findImg(pid) {
     const result = await product.findUnique({
-        select:{
+        select: {
             imageName: true
         },
-        where:{
+        where: {
             productId: pid
         }
     })
     return result.imageName
 }
 
-async function deleteColors(pid){
+async function deleteColors(pid) {
     await productDetail.deleteMany({
-        where:{
+        where: {
             productId: pid
         }
     })
