@@ -74,7 +74,7 @@ const getCart = async (req, res) => {
         const item = [];
         for (let i in result) {
             const cartItemId = result[i].cartItemId;
-            const productId = result[i].ProductDetail.Product.productId;
+            const productId = result[i].ProductDetail.productId;
             const productDetailId = result[i].ProductDetail.productDetailId
             const productName = result[i].ProductDetail.Product.productName;
             const price = result[i].ProductDetail.Product.price;
@@ -459,10 +459,10 @@ const updateCart = async (req, res) => {
     }
     try {
         await cartItem.updateMany({
-            data:{
+            data: {
                 productDetailId: Number(pid)
             },
-            where:{
+            where: {
                 cartItemId: Number(id)
             }
         })
@@ -472,6 +472,57 @@ const updateCart = async (req, res) => {
         return res.send("Something Went Wrong!")
     }
 
+}
+
+const getCartById = async (req, res) => {
+    const id = Number(req.params.id)
+    if (!id) {
+        res.status(400)
+        return res.send("CartItem id is required!")
+    }
+    const username = req.payload.audience;
+    if (!findUser(username)) {
+        res.status(404)
+        return res.send("Username does not exist!")
+    }
+    const itemExist = await findCartItem(username, id);
+    if (!itemExist) {
+        res.status(404)
+        return res.send("Item does not exist!")
+    }
+    try {
+        const result = await cartItem.findUnique({
+            select: {
+                ProductDetail: {
+                    include: {
+                        Product: {
+                            include: {
+                                BagType: true
+                            }
+                        },
+                        Color: true
+                    }
+                }
+            },
+            where: {
+                cartItemId: id
+            }
+        })
+        let item = []
+        const cartItemId = id
+        const productId = result.ProductDetail.productId
+        const prodouctDetailId = result.ProductDetail.productDetailId
+        const productName = result.ProductDetail.Product.productName
+        const price = result.ProductDetail.Product.price
+        const imageName = result.ProductDetail.Product.imageName
+        const colorId = result.ProductDetail.Color.colorId
+        const colorName = result.ProductDetail.Color.colorName;
+        item = { cartItemId, productId, productName, price, imageName, colorId, colorName, prodouctDetailId }
+        res.status(200).send(item)
+    } catch (err) {
+        res.status(500)
+        return res.send("Something Went Wrong!")
+    }
 }
 
 module.exports = {
@@ -484,5 +535,6 @@ module.exports = {
     getOrderList,
     addOrder,
     editAddress,
-    updateCart
+    updateCart,
+    getCartById
 }
