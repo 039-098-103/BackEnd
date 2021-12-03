@@ -113,11 +113,11 @@ const addToCart = async (req, res) => {
         return res.send("Item does not exist!")
     }
     const itemInCart = await cartItem.count({
-        where:{
+        where: {
             username: username
         }
     })
-    if(itemInCart == 30){
+    if (itemInCart == 30) {
         res.status(405)
         return res.send("Items in Cart is full!.")
     }
@@ -370,15 +370,15 @@ const addOrder = async (req, res) => {
 
         var total = 0
         var quantity = 0
-        for(let i in data){
+        for (let i in data) {
             total += Number(data[i].price)
             quantity += 1
-           
+
         }
         const deliveryDate = new Date(Date.now() + 12096e5)
-        
+
         await orders.createMany({
-            data:{
+            data: {
                 address: "-",
                 deliveryDate: deliveryDate,
                 quantity: quantity,
@@ -390,20 +390,20 @@ const addOrder = async (req, res) => {
         const order_res = await prisma.$queryRaw`SELECT orderId from Orders where username=${username} order by orderId DESC limit 1`
         const o_id = order_res[0].orderId
 
-        for(let i in data){
+        for (let i in data) {
             await orderDetail.createMany({
-                data:{
+                data: {
                     orderId: o_id,
                     productDetailId: data[i].productDetailId
                 }
             })
             await cartItem.delete({
-                where:{
+                where: {
                     cartItemId: data[i].cartItemId
                 }
             })
         }
-        
+
         fs.unlinkSync('./tmp/data.json')
         res.status(200).send("Successfully ordered.")
     } catch (err) {
@@ -413,22 +413,65 @@ const addOrder = async (req, res) => {
     }
 }
 
-const editAddress = async(req,res)=>{
+const editAddress = async (req, res) => {
     const username = req.payload.audience
-    if(!findUser(username)){
+    if (!findUser(username)) {
         res.status(404)
         return res.send("Username does not exist!")
     }
-    try{
+    try {
         const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
         await prisma.$executeRaw`UPDATE orders set address=${data.address} where username=${username} and orderId=${data.orderId}`
         fs.unlinkSync('./tmp/data.json')
         res.status(200).send("Address has been updated.")
-    }catch(err){
+    } catch (err) {
         res.status(500)
         fs.unlinkSync('./tmp/data.json')
         return res.send("Something Went Wrong!")
     }
+}
+
+const updateCart = async (req, res) => {
+    const id = Number(req.params.id)
+    const pid = Number(req.params.pid)
+    if (!id || !pid) {
+        res.status(400)
+        return res.send("CartItem id or productDetail id is empty!")
+    }
+    const username = req.payload.audience;
+    if (!findUser(username)) {
+        res.status(404)
+        return res.send("Username does not exist!")
+    }
+    const itemExist = await findCartItem(username, id);
+    if (!itemExist) {
+        res.status(404)
+        return res.send("Item does not exist!")
+    }
+    const itemInCart = await cartItem.count({
+        where: {
+            username: username
+        }
+    })
+    if (itemInCart == 30) {
+        res.status(405)
+        return res.send("Items in Cart is full!.")
+    }
+    try {
+        await cartItem.updateMany({
+            data:{
+                productDetailId: Number(pid)
+            },
+            where:{
+                cartItemId: Number(id)
+            }
+        })
+        res.status(200).send("Item updated!")
+    } catch (err) {
+        res.status(500)
+        return res.send("Something Went Wrong!")
+    }
+
 }
 
 module.exports = {
@@ -440,5 +483,6 @@ module.exports = {
     editInfo,
     getOrderList,
     addOrder,
-    editAddress
+    editAddress,
+    updateCart
 }

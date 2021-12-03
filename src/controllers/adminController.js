@@ -86,7 +86,7 @@ const deleteStaff = async (req, res) => {
     try {
         const isExists = await findUser(username_lc);
         if (!isExists) {
-            res.status(400)
+            res.status(404)
             return res.send("Username not found!")
         }
         const isAdmin = await isUserAdmin(username_lc);
