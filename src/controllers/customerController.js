@@ -367,17 +367,15 @@ const addOrder = async (req, res) => {
     }
     try {
         const data = JSON.parse(fs.readFileSync('./tmp/data.json', 'utf-8'))
-
         var total = 0
         var quantity = 0
-        for (let i in data) {
-            total += Number(data[i].price)
+        for (let i in data.Cart) {
+            total += Number(data.Cart[i].price)
             quantity += 1
 
         }
         const deliveryDate = new Date(Date.now() + 12096e5)
-
-        await orders.create({
+        await orders.createMany({
             data: {
                 address: data.address,
                 deliveryDate: deliveryDate,
@@ -390,16 +388,16 @@ const addOrder = async (req, res) => {
         const order_res = await prisma.$queryRaw`SELECT orderId from Orders where username=${username} order by orderId DESC limit 1`
         const o_id = order_res[0].orderId
 
-        for (let i in data) {
+        for (let i in data.Cart) {
             await orderDetail.createMany({
                 data: {
                     orderId: o_id,
-                    productDetailId: data[i].productDetailId
+                    productDetailId: data.Cart[i].productDetailId
                 }
             })
             await cartItem.delete({
                 where: {
-                    cartItemId: data[i].cartItemId
+                    cartItemId: data.Cart[i].cartItemId
                 }
             })
         }
