@@ -377,7 +377,7 @@ const addOrder = async (req, res) => {
         }
         const deliveryDate = new Date(Date.now() + 12096e5)
 
-        await orders.createMany({
+        await orders.create({
             data: {
                 address: data.address,
                 deliveryDate: deliveryDate,
