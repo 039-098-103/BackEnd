@@ -207,23 +207,28 @@ const editProduct = async (req, res) => {
         const data = JSON.parse(fs.readFileSync('./tmp/data.json'))
         const oldImgName = await findImg(Number(id))
         var imgName;
-        if (!getImgName() == '') {
-            imgName = getImgName()
+        const image = getImgName()
+        if (!image) {
+
+            imgName = oldImgName
+        } else {
+            imgName = image
             fs.unlinkSync(`./images/${oldImgName}`)
         }
-        imgName = oldImgName
+
         await product.updateMany({
-            data:{
+            data: {
                 productName: data.productName,
                 productDes: data.productDes,
                 price: data.price,
                 bagTypeId: data.bagTypeId,
                 imageName: imgName
             },
-            where:{
+            where: {
                 productId: Number(id)
             }
         })
+
         const clrs = data.Color
         await deleteColors(Number(id))
         addColors(Number(id), clrs)

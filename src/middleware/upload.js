@@ -16,14 +16,16 @@ const fileStorageEngine = multer.diskStorage({
             cb(null, 'data.json')
         }
         if (file.mimetype === 'image/png' || file.mimetype === 'image/jpg' || file.mimetype === 'image/jpeg') {
-            imgName = Date.now() + "-" + file.originalname 
+            imgName = Date.now() + "-" + file.originalname
             cb(null, imgName)
         }
     }
 })
 
 function getImgName() {
-    return imgName
+    let tmp = imgName
+    imgName = ''
+    return tmp
 }
 
 const upload = multer({
