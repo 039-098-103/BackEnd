@@ -169,7 +169,7 @@ const addProduct = async (req, res) => {
             }
         })
 
-        const product_id = await prisma.$queryRaw`SELECT * from product order by productId DESC limit 1`
+        const product_id = await prisma.$queryRaw`SELECT * from Product order by productId DESC limit 1`
         const pid = product_id[0].productId
         const clrs = data.Color
         addColors(pid, clrs)

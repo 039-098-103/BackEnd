@@ -28,7 +28,6 @@ const accRegister = async (req, res) => {
 
         fs.unlinkSync('./tmp/data.json')
     } catch (err) {
-        console.log(err);
         fs.unlinkSync('./tmp/data.json')
         res.status(500)
         return res.send('Something Went Wrong!')

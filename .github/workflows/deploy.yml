@@ -25,6 +25,7 @@ jobs:
         echo DATABASE_URL=${{ secrets.DATABASE }} >> .env
         echo ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }} >> .env
         ls -a
+        mkdir tmp
     - name: build docker image
       run: |
         docker build . --tag ghcr.io/039-098-103/backend
